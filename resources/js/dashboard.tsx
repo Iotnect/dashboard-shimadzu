@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-    Activity, Camera, Check, CircleAlert, ClipboardList, Clock3, FileVideo,
+    Activity, Check, CircleAlert, ClipboardList, Clock3, FileVideo,
     LayoutDashboard, LogOut, PanelLeftClose, PanelLeftOpen, ScanLine, TriangleAlert, Video, VideoOff,
 } from 'lucide-react';
 import type { SharedData } from '@/app';
@@ -44,7 +44,7 @@ function Clock() {
 
 function CameraPanel({ videoUrl }: { videoUrl: string | null }) {
     const [videoError, setVideoError] = useState(false);
-    const playable = videoUrl && !videoError;
+    const status = videoError ? 'Unavailable' : videoUrl ? 'Replay' : 'Awaiting footage';
 
     return (
         <Card className="panel camera-panel" aria-labelledby="camera-title">
@@ -54,12 +54,14 @@ function CameraPanel({ videoUrl }: { videoUrl: string | null }) {
                     <h2 id="camera-title">Camera 01</h2>
                     <p>Inspection camera</p>
                 </div>
-                <Badge variant="outline" className="source-badge"><span /> Demo replay</Badge>
+                <Badge variant="outline" className="source-badge">
+                    <span /> {status}
+                </Badge>
             </div>
             <div className="camera-screen">
-                {playable ? (
+                {videoUrl && !videoError ? (
                     <video src={videoUrl} controls playsInline preload="metadata"
-                        aria-label="Camera 01 demo footage" onError={() => setVideoError(true)} />
+                        aria-label="Camera 01 recording" onError={() => setVideoError(true)} />
                 ) : (
                     <>
                         <div className="viewfinder" aria-hidden="true">
@@ -67,14 +69,14 @@ function CameraPanel({ videoUrl }: { videoUrl: string | null }) {
                         </div>
                         <div className="screen-empty" role={videoError ? 'status' : undefined}>
                             <span className="screen-icon"><VideoOff aria-hidden="true" /></span>
-                            <strong>{videoError ? 'Footage could not be played' : 'No demo footage yet'}</strong>
-                            <p>{videoError ? 'Check the MP4 file and refresh the dashboard.' : 'Add camera-01.mp4 to load a demo replay.'}</p>
+                            <strong>{videoError ? 'Footage could not be played' : 'No footage available'}</strong>
+                            <p>{videoError ? 'Check the MP4 file and refresh the dashboard.' : 'Camera recordings appear here when available.'}</p>
                         </div>
                     </>
                 )}
             </div>
             <div className="camera-footer">
-                <span><FileVideo size={15} aria-hidden="true" /> Demo video file</span>
+                <span><FileVideo size={15} aria-hidden="true" /> Recording file</span>
                 <span>MP4</span>
             </div>
         </Card>
@@ -98,7 +100,7 @@ function Checklist() {
                 <span className="panel-icon"><ClipboardList aria-hidden="true" /></span>
                 <div>
                     <h2 id="checklist-title">Inspection checklist</h2>
-                    <p>Sample detection results</p>
+                    <p>Inspection results</p>
                 </div>
             </div>
             <div className="checklist-summary">
@@ -106,7 +108,7 @@ function Checklist() {
                     <span>Criteria matched</span>
                     <span className="summary-count">{matched} <span>/ {checklist.length}</span></span>
                 </div>
-                <progress className="check-progress" value={matched} max={checklist.length} aria-label="Sample criteria matched" />
+                <progress className="check-progress" value={matched} max={checklist.length} aria-label="Criteria matched" />
             </div>
             <ul className="checklist-items">
                 {checklist.map((item) => {
@@ -134,7 +136,7 @@ function EventLog() {
                 <span className="panel-icon"><Activity aria-hidden="true" /></span>
                 <div>
                     <h2 id="events-title">Event log</h2>
-                    <p>Sample inspection events</p>
+                    <p>Camera 01 activity</p>
                 </div>
             </div>
             <ul className="event-items">
@@ -218,12 +220,9 @@ export function Dashboard({
             </aside>
             <main className="dashboard-main">
                 <div className="dashboard-content">
-                    <div className="page-heading">
-                        <div className="page-title">
-                            <span className="detection-icon"><ScanLine aria-hidden="true" /></span>
-                            <div><h1>AI Detection</h1><p>Inspection station</p></div>
-                        </div>
-                        <Badge variant="outline" className="demo-badge"><Camera size={14} aria-hidden="true" /> Demo mode</Badge>
+                    <div className="page-title">
+                        <span className="detection-icon"><ScanLine aria-hidden="true" /></span>
+                        <div><h1>AI Detection</h1><p>Inspection station</p></div>
                     </div>
                     <div className="monitor-grid">
                         <CameraPanel videoUrl={videoUrl} />
