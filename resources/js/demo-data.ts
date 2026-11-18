@@ -1,7 +1,8 @@
 export const inspectionResults = ['ok', 'review', 'error'] as const;
 export type InspectionResult = (typeof inspectionResults)[number];
+export const resultLabels = { ok: 'OK', review: 'Needs review', error: 'Error' };
 
-type InspectionItem = {
+export type InspectionItem = {
     label: string;
     description: string;
     result: InspectionResult;

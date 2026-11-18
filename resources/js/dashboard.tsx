@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
-    Activity, Check, CircleHelp, ClipboardList, Clock3,
-    LayoutDashboard, LogOut, PanelLeftClose, PanelLeftOpen, ScanLine, TriangleAlert, Video, VideoOff,
+    Activity, Check, CircleHelp, ClipboardList, Clock3, Download, LoaderCircle,
+    LayoutDashboard, LogOut, PanelLeftClose, PanelLeftOpen, Play, ScanLine, Square, TriangleAlert, Video, VideoOff,
 } from 'lucide-react';
 import type { SharedData } from '@/app';
 import { Brand, ThemeToggle, type ThemeControl } from '@/components/shell-controls';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { checklist, events, inspectionResults, type InspectionResult } from '@/demo-data';
+import { checklist, events, inspectionResults, resultLabels, type InspectionResult } from '@/demo-data';
 
 export type DashboardData = {
     kind: 'dashboard';
@@ -25,9 +25,9 @@ const timeFormat = new Intl.DateTimeFormat('en-MY', {
     timeZone: 'Asia/Kuala_Lumpur', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
 });
 const resultPresentation = {
-    ok: { label: 'OK', icon: Check },
-    review: { label: 'Needs review', icon: CircleHelp },
-    error: { label: 'Error', icon: TriangleAlert },
+    ok: { label: resultLabels.ok, icon: Check },
+    review: { label: resultLabels.review, icon: CircleHelp },
+    error: { label: resultLabels.error, icon: TriangleAlert },
 };
 
 function Clock() {
@@ -47,9 +47,33 @@ function Clock() {
     );
 }
 
-function CameraPanel({ videoUrl }: { videoUrl: string | null }) {
+function CameraPanel({ videoUrl, running, onRunningChange }: {
+    videoUrl: string | null;
+    running: boolean;
+    onRunningChange: (running: boolean) => void;
+}) {
+    const videoRef = useRef<HTMLVideoElement>(null);
     const [videoError, setVideoError] = useState(false);
-    const status = videoError ? 'Unavailable' : videoUrl ? 'Replay' : 'Live feed';
+    const [playbackError, setPlaybackError] = useState(false);
+    const status = videoError ? 'Unavailable' : !running ? 'Stopped' : videoUrl ? 'Running' : 'Waiting for feed';
+
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video || videoError) return;
+        let cancelled = false;
+        if (running) {
+            setPlaybackError(false);
+            void video.play().catch(() => {
+                if (!cancelled) {
+                    setPlaybackError(true);
+                    onRunningChange(false);
+                }
+            });
+        } else {
+            video.pause();
+        }
+        return () => { cancelled = true; };
+    }, [running, videoUrl, videoError, onRunningChange]);
 
     return (
         <Card className="panel camera-panel" aria-labelledby="camera-title">
@@ -59,14 +83,18 @@ function CameraPanel({ videoUrl }: { videoUrl: string | null }) {
                     <h2 id="camera-title">Camera 01</h2>
                     <p>Inspection camera</p>
                 </div>
-                <Badge variant="outline" className="source-badge">
+                <Badge variant="outline" className="source-badge" role="status">
                     <span /> {status}
                 </Badge>
             </div>
             <div className="camera-screen">
                 {videoUrl && !videoError ? (
-                    <video src={videoUrl} controls playsInline preload="metadata"
-                        aria-label="Camera 01 recording" onError={() => setVideoError(true)} />
+                    <video ref={videoRef} src={videoUrl} controls muted playsInline preload="metadata"
+                        aria-label="Camera 01 recording"
+                        onPlay={() => onRunningChange(true)}
+                        onPause={() => onRunningChange(false)}
+                        onEnded={() => onRunningChange(false)}
+                        onError={() => { setVideoError(true); onRunningChange(false); }} />
                 ) : (
                     <>
                         <div className="viewfinder" aria-hidden="true">
@@ -74,12 +102,13 @@ function CameraPanel({ videoUrl }: { videoUrl: string | null }) {
                         </div>
                         <div className="screen-empty" role={videoError ? 'status' : undefined}>
                             <span className="screen-icon"><VideoOff aria-hidden="true" /></span>
-                            <strong>{videoError ? 'Footage could not be played' : 'No footage available'}</strong>
-                            <p>{videoError ? 'Check the recording and refresh the dashboard.' : 'Camera recordings appear here when available.'}</p>
+                            <strong>{videoError ? 'Footage could not be played' : running ? 'Waiting for camera' : 'Camera stopped'}</strong>
+                            <p>{videoError ? 'Check the recording and refresh the dashboard.' : running ? 'Inspection will continue when footage is available.' : 'Select Start inspection to begin.'}</p>
                         </div>
                     </>
                 )}
             </div>
+            {playbackError && <p className="camera-error" role="alert">Playback could not start. Try Start inspection again.</p>}
         </Card>
     );
 }
@@ -163,6 +192,10 @@ function EventLog() {
 export function Dashboard({
     dashboardUrl, logoutUrl, operator, videoUrl, logoUrl, faviconUrl, csrfToken, isDark, toggleTheme,
 }: DashboardData & SharedData & ThemeControl) {
+    const [running, setRunning] = useState(false);
+    const [exporting, setExporting] = useState(false);
+    const [reportError, setReportError] = useState('');
+    const [reportReady, setReportReady] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
         try {
             return localStorage.getItem('shimadzu-sidebar-collapsed') === 'true';
@@ -180,6 +213,28 @@ export function Dashboard({
         try {
             localStorage.setItem('shimadzu-sidebar-collapsed', String(collapsed));
         } catch {}
+    }
+
+    async function downloadReport() {
+        setExporting(true);
+        setReportError('');
+        setReportReady(false);
+        const details = {
+            items: checklist.map((item) => ({ ...item })),
+            operator,
+            logoUrl,
+            sessionStatus: running ? videoUrl ? 'Running' : 'Waiting for feed' : 'Stopped',
+            generatedAt: new Date(),
+        };
+        try {
+            const { downloadInspectionReport } = await import('@/lib/inspection-report');
+            await downloadInspectionReport(details);
+            setReportReady(true);
+        } catch {
+            setReportError('The report could not be created. Please try again.');
+        } finally {
+            setExporting(false);
+        }
     }
 
     const sidebarToggle = (
@@ -225,12 +280,28 @@ export function Dashboard({
             </aside>
             <main className="dashboard-main">
                 <div className="dashboard-content">
-                    <div className="page-title">
-                        <span className="detection-icon"><ScanLine aria-hidden="true" /></span>
-                        <div><h1>AI Detection</h1><p>Inspection station</p></div>
+                    <div className="page-heading">
+                        <div className="page-title">
+                            <span className="detection-icon"><ScanLine aria-hidden="true" /></span>
+                            <div><h1>AI Detection</h1><p>Inspection station</p></div>
+                        </div>
+                        <div className="inspection-actions">
+                            <Button type="button" className="inspection-toggle"
+                                variant={running ? 'outline' : 'default'} onClick={() => setRunning(!running)}>
+                                {running ? <Square aria-hidden="true" /> : <Play aria-hidden="true" />}
+                                {running ? 'Stop inspection' : 'Start inspection'}
+                            </Button>
+                            <Button type="button" variant="outline" className="report-button"
+                                disabled={exporting} onClick={() => void downloadReport()}>
+                                {exporting ? <LoaderCircle className="report-spinner" aria-hidden="true" /> : <Download aria-hidden="true" />}
+                                {exporting ? 'Creating report…' : 'Download report'}
+                            </Button>
+                        </div>
                     </div>
+                    {reportError && <p className="report-feedback" role="alert">{reportError}</p>}
+                    {reportReady && <p className="sr-only" role="status">Inspection report downloaded.</p>}
                     <div className="monitor-grid">
-                        <CameraPanel videoUrl={videoUrl} />
+                        <CameraPanel videoUrl={videoUrl} running={running} onRunningChange={setRunning} />
                         <Checklist />
                     </div>
                     <EventLog />
