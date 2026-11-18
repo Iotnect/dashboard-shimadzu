@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-    Activity, Check, CircleAlert, ClipboardList, Clock3, FileVideo,
+    Activity, Check, CircleHelp, ClipboardList, Clock3,
     LayoutDashboard, LogOut, PanelLeftClose, PanelLeftOpen, ScanLine, TriangleAlert, Video, VideoOff,
 } from 'lucide-react';
 import type { SharedData } from '@/app';
@@ -8,7 +8,7 @@ import { Brand, ThemeToggle, type ThemeControl } from '@/components/shell-contro
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { checklist, events, type InspectionResult } from '@/demo-data';
+import { checklist, events, inspectionResults, type InspectionResult } from '@/demo-data';
 
 export type DashboardData = {
     kind: 'dashboard';
@@ -24,6 +24,11 @@ const dateFormat = new Intl.DateTimeFormat('en-MY', {
 const timeFormat = new Intl.DateTimeFormat('en-MY', {
     timeZone: 'Asia/Kuala_Lumpur', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
 });
+const resultPresentation = {
+    ok: { label: 'OK', icon: Check },
+    review: { label: 'Needs review', icon: CircleHelp },
+    error: { label: 'Error', icon: TriangleAlert },
+};
 
 function Clock() {
     const [now, setNow] = useState(() => new Date());
@@ -44,7 +49,7 @@ function Clock() {
 
 function CameraPanel({ videoUrl }: { videoUrl: string | null }) {
     const [videoError, setVideoError] = useState(false);
-    const status = videoError ? 'Unavailable' : videoUrl ? 'Replay' : 'Awaiting footage';
+    const status = videoError ? 'Unavailable' : videoUrl ? 'Replay' : 'Live feed';
 
     return (
         <Card className="panel camera-panel" aria-labelledby="camera-title">
@@ -70,14 +75,10 @@ function CameraPanel({ videoUrl }: { videoUrl: string | null }) {
                         <div className="screen-empty" role={videoError ? 'status' : undefined}>
                             <span className="screen-icon"><VideoOff aria-hidden="true" /></span>
                             <strong>{videoError ? 'Footage could not be played' : 'No footage available'}</strong>
-                            <p>{videoError ? 'Check the MP4 file and refresh the dashboard.' : 'Camera recordings appear here when available.'}</p>
+                            <p>{videoError ? 'Check the recording and refresh the dashboard.' : 'Camera recordings appear here when available.'}</p>
                         </div>
                     </>
                 )}
-            </div>
-            <div className="camera-footer">
-                <span><FileVideo size={15} aria-hidden="true" /> Recording file</span>
-                <span>MP4</span>
             </div>
         </Card>
     );
@@ -85,14 +86,17 @@ function CameraPanel({ videoUrl }: { videoUrl: string | null }) {
 
 function ResultChip({ result }: { result: InspectionResult }) {
     return (
-        <Badge variant="outline" className={`result-chip ${result}`}>
-            {result === 'matched' ? 'Matched' : 'Mismatch'}
+        <Badge variant="outline" className="result-chip" data-result={result}>
+            {resultPresentation[result].label}
         </Badge>
     );
 }
 
 function Checklist() {
-    const matched = checklist.filter((item) => item.result === 'matched').length;
+    const counts = { ok: 0, review: 0, error: 0 };
+    for (const item of checklist) {
+        counts[item.result]++;
+    }
 
     return (
         <Card className="panel checklist-panel" aria-labelledby="checklist-title">
@@ -103,19 +107,20 @@ function Checklist() {
                     <p>Inspection results</p>
                 </div>
             </div>
-            <div className="checklist-summary">
-                <div className="summary-label">
-                    <span>Criteria matched</span>
-                    <span className="summary-count">{matched} <span>/ {checklist.length}</span></span>
-                </div>
-                <progress className="check-progress" value={matched} max={checklist.length} aria-label="Criteria matched" />
-            </div>
+            <ul className="checklist-summary" aria-label="Inspection status summary">
+                {inspectionResults.map((result) => (
+                    <li key={result} data-result={result}>
+                        <strong>{counts[result]}</strong>
+                        <span>{resultPresentation[result].label}</span>
+                    </li>
+                ))}
+            </ul>
             <ul className="checklist-items">
                 {checklist.map((item) => {
-                    const Icon = item.result === 'matched' ? Check : CircleAlert;
+                    const Icon = resultPresentation[item.result].icon;
                     return (
                         <li className="checklist-item" key={item.label}>
-                            <span className={`result-icon ${item.result}`}><Icon aria-hidden="true" /></span>
+                            <span className="result-icon" data-result={item.result}><Icon aria-hidden="true" /></span>
                             <div>
                                 <h3>{item.label}</h3>
                                 <p>{item.description}</p>
@@ -141,10 +146,10 @@ function EventLog() {
             </div>
             <ul className="event-items">
                 {events.map((event) => {
-                    const Icon = event.result === 'mismatch' ? TriangleAlert : Check;
+                    const Icon = resultPresentation[event.result].icon;
                     return (
                         <li className="event-item" key={event.title}>
-                            <span className={`result-icon ${event.result}`}><Icon aria-hidden="true" /></span>
+                            <span className="result-icon" data-result={event.result}><Icon aria-hidden="true" /></span>
                             <div><h3>{event.title}</h3><p>{event.description}</p></div>
                             <ResultChip result={event.result} />
                         </li>
