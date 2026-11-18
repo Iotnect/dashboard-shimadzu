@@ -18,6 +18,15 @@ export function ThemeToggle({ isDark, toggleTheme }: ThemeControl) {
     );
 }
 
-export function Brand({ logoUrl }: { logoUrl: string }) {
-    return <img className="brand-logo" src={logoUrl} width={500} height={144} alt="Shimadzu" />;
+export function Brand({ logoUrl, faviconUrl }: { logoUrl: string; faviconUrl?: string }) {
+    if (!faviconUrl) {
+        return <img className="brand-logo" src={logoUrl} width={500} height={144} alt="Shimadzu" />;
+    }
+
+    return (
+        <div className="brand-lockup" role="img" aria-label="Shimadzu">
+            <img className="brand-logo" src={logoUrl} width={500} height={144} alt="" />
+            <img className="brand-icon" src={faviconUrl} width={26} height={26} alt="" />
+        </div>
+    );
 }

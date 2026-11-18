@@ -8,6 +8,7 @@ import { Login, type LoginData } from '@/login';
 
 export type SharedData = {
     logoUrl: string;
+    faviconUrl: string;
     csrfToken: string;
 };
 

@@ -154,7 +154,7 @@ function EventLog() {
 }
 
 export function Dashboard({
-    dashboardUrl, logoutUrl, operator, videoUrl, logoUrl, csrfToken, isDark, toggleTheme,
+    dashboardUrl, logoutUrl, operator, videoUrl, logoUrl, faviconUrl, csrfToken, isDark, toggleTheme,
 }: DashboardData & SharedData & ThemeControl) {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
         try {
@@ -186,7 +186,7 @@ export function Dashboard({
     return (
         <div className="dashboard-shell" data-sidebar-collapsed={sidebarCollapsed}>
             <header className="topbar">
-                <div className="topbar-brand"><Brand logoUrl={logoUrl} /></div>
+                <div className="topbar-brand"><Brand logoUrl={logoUrl} faviconUrl={faviconUrl} /></div>
                 <span className="topbar-title">Monitoring console</span>
                 <div className="topbar-tools">
                     <Clock />
@@ -196,7 +196,7 @@ export function Dashboard({
             </header>
             <aside className="sidebar">
                 <div className="sidebar-brand">
-                    <Brand logoUrl={logoUrl} />
+                    <Brand logoUrl={logoUrl} faviconUrl={faviconUrl} />
                 </div>
                 <div className="desktop-sidebar-toggle">{sidebarToggle}</div>
                 <nav id="dashboard-navigation" className="sidebar-nav" aria-label="Main navigation">

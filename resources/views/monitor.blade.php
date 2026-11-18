@@ -20,6 +20,7 @@
         <script id="monitor-data" type="application/json">{!! Illuminate\Support\Js::encode([
             ...$page,
             'logoUrl' => asset('images/shimadzu-logo.png'),
+            'faviconUrl' => asset('favicon.ico'),
             'csrfToken' => csrf_token(),
         ]) !!}</script>
     </body>
