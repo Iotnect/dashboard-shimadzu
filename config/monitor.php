@@ -1,6 +1,7 @@
 <?php
 
 return [
-    'demo_password' => env('MONITOR_DEMO_PASSWORD'),
+    'demo_username' => 'Shimadzu',
+    'demo_password' => 'Shimadzu123',
     'demo_video_url' => env('MONITOR_DEMO_VIDEO_URL'),
 ];

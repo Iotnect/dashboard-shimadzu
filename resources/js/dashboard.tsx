@@ -197,8 +197,8 @@ export function Dashboard({
             <aside className="sidebar">
                 <div className="sidebar-brand">
                     <Brand logoUrl={logoUrl} />
-                    {sidebarToggle}
                 </div>
+                <div className="desktop-sidebar-toggle">{sidebarToggle}</div>
                 <nav id="dashboard-navigation" className="sidebar-nav" aria-label="Main navigation">
                     <a href={dashboardUrl} aria-current="page" aria-label="Dashboard" title="Dashboard">
                         <LayoutDashboard aria-hidden="true" /><span>Dashboard</span>

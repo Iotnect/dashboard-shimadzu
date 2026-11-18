@@ -8,7 +8,7 @@ RUN npm run typecheck && npm run build
 
 FROM dunglas/frankenphp:1-php8.5-bookworm AS php
 WORKDIR /app
-RUN install-php-extensions pdo_pgsql mbstring opcache \
+RUN install-php-extensions mbstring opcache \
     && cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
 FROM php AS backend
@@ -28,10 +28,6 @@ COPY Caddyfile /etc/caddy/Caddyfile
 ENV APP_ENV=production \
     APP_DEBUG=false \
     APP_TRUST_PROXY=true \
-    DB_CONNECTION=pgsql \
-    DB_SSLMODE=require \
-    CACHE_STORE=database \
-    SESSION_DRIVER=database \
     SESSION_SECURE_COOKIE=true \
     LOG_CHANNEL=stderr \
     VIEW_COMPILED_PATH=/tmp/shimadzu-views \

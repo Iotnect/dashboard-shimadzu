@@ -139,13 +139,39 @@
     min-height: var(--topbar-height);
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.25rem;
     padding-inline: 0.875rem;
     border-bottom: 1px solid var(--line);
 }
 .brand-logo { display: block; width: 158px; height: auto; border-radius: 5px; background: #fff; }
-.sidebar-brand .brand-logo { flex: 0 1 148px; min-width: 0; }
+.desktop-sidebar-toggle {
+    position: absolute;
+    z-index: 1;
+    top: 50%;
+    right: 0;
+    transform: translate(50%, -50%);
+}
+.desktop-sidebar-toggle .sidebar-toggle {
+    position: relative;
+    isolation: isolate;
+    height: 48px;
+    border-radius: 24px;
+    background: transparent;
+}
+.desktop-sidebar-toggle .sidebar-toggle::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 0 7px;
+    border: 1px solid var(--control-border);
+    border-radius: inherit;
+    background: var(--surface);
+}
+.desktop-sidebar-toggle .sidebar-toggle:hover { color: var(--brand-text); }
+.desktop-sidebar-toggle .sidebar-toggle:hover::before {
+    border-color: var(--brand-text);
+    background: var(--brand-tint);
+}
+.desktop-sidebar-toggle .sidebar-toggle:active::before { background: var(--raised); }
 .sidebar-nav { padding: 1.125rem 0.875rem; }
 .sidebar-nav a {
     min-height: 46px;
@@ -187,7 +213,6 @@
 .dashboard-shell[data-sidebar-collapsed="true"] { --sidebar-width: 68px; }
 .dashboard-shell[data-sidebar-collapsed="true"] .topbar-brand { display: block; }
 .dashboard-shell[data-sidebar-collapsed="true"] .topbar-title { display: none; }
-.dashboard-shell[data-sidebar-collapsed="true"] .sidebar-brand,
 .dashboard-shell[data-sidebar-collapsed="true"] .sidebar-footer { justify-content: center; padding-inline: 0; }
 .dashboard-shell[data-sidebar-collapsed="true"] .sidebar-nav { padding-inline: 0.625rem; }
 .dashboard-shell[data-sidebar-collapsed="true"] .sidebar-nav a { justify-content: center; padding-inline: 0; }
@@ -417,7 +442,7 @@
     }
     .topbar { min-height: 66px; padding-inline: 1rem; }
     .topbar-brand, .mobile-sidebar-toggle { display: block; }
-    .topbar-title, .sidebar-brand, .clock-date, .top-clock svg { display: none; }
+    .topbar-title, .sidebar-brand, .desktop-sidebar-toggle, .clock-date, .top-clock svg { display: none; }
     .brand-logo { width: 128px; }
     .topbar-tools { gap: 0.625rem; }
     .sidebar {
