@@ -17,7 +17,7 @@ Run `composer dev` for frontend hot reload.
 
 ## Add the demo replay
 
-Save an MP4 video (H.264 recommended) at `storage/app/private/camera-01.mp4` and refresh the dashboard. The player appears automatically after sign-in. Laravel serves the video through the authenticated camera route.
+The dashboard plays `public/demo/camera-01.mp4`. Replace that file with an H.264 MP4 and rebuild to change the footage.
 
 Edit the example checklist and event log in `resources/js/demo-data.ts`. Both use sample data pending integration with the camera and edge inference device.
 

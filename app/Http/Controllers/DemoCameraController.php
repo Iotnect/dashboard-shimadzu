@@ -12,8 +12,10 @@ class DemoCameraController extends Controller
 
     public function dashboard(Request $request): View
     {
-        $videoUrl = config('monitor.demo_video_url')
-            ?: (is_file(storage_path(self::CLIP)) ? route('camera.demo') : null);
+        $videoUrl = is_file(public_path('demo/camera-01.mp4'))
+            ? asset('demo/camera-01.mp4')
+            : (config('monitor.demo_video_url')
+                ?: (is_file(storage_path(self::CLIP)) ? route('camera.demo') : null));
 
         return view('monitor', [
             'title' => 'Dashboard',
